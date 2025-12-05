@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Cadastro de Pessoa Física (Web)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Lib de QRCode (CDN) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background: #e5e7eb;
+      color: #111827;
+    }
+
+    .app {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 10px;
+    }
+
+    .top-bar {
+      background: #a7f3d0;
+      color: #065f46;
+      padding: 12px 16px;
+      border-radius: 10px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .top-bar h1 {
+      font-size: 20px;
+      margin: 0;
+      font-weight: 700;
+    }
+
+    .card {
+      background: #ffffff;
+      border-radius: 10px;
+      padding: 12px 16px;
+      margin-bottom: 10px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    }
+
+    .card-title {
+      font-weight: 700;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+
+    .grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    @media (min-width: 900px) {
+      .top-area {
+        display: grid;
+        grid-template-columns: 2fr 1.3fr;
+        gap: 10px;
+      }
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 2px;
+    }
+
+    input, select, button {
+      font-size: 13px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 6px 8px;
+      border-radius: 6px;
+      border: 1px solid #d1d5db;
+      outline: none;
+    }
+
+    input:focus, select:focus {
+      border-color: #10b981;
+      box-shadow: 0 0 0 1px #a7f3d0;
+    }
+
+    .row-2 {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 8px;
+    }
+
+    .btn-row {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .btn {
+      border: none;
+      border-radius: 6px;
+      padding: 6px 12px;
+      cursor: pointer;
+      font-weight: 500;
+      background: #10b981;
+      color: #ffffff;
+      transition: background 0.15s ease, transform 0.1s ease;
+      white-space: nowrap;
+    }
+
+    .btn:hover {
+      background: #059669;
+      transform: translateY(-1px);
+    }
+
+    .btn.secondary {
+      background: #6b7280;
+    }
+    .btn.secondary:hover {
+      background: #4b5563;
+    }
+
+    .btn.danger {
+      background: #ef4444;
+    }
+    .btn.danger:hover {
+      background: #b91c1c;
+    }
+
+    /* Tabela */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    thead {
+      background: #e5e7eb;
+    }
+
+    th, td {
+      padding: 6px 8px;
+      border-bottom: 1px solid #e5e7eb;
+      text-align: left;
+    }
+
+    tbody tr:nth-child(even) {
+      background: #f9fafb;
+    }
+
+    /* QR / crachá */
+    .badge-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .badge-preview {
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 8px;
+      width: 100%;
+      max-width: 420px;
+      background: #ffffff;
+    }
+
+    .badge-header {
+      background: #a7f3d0;
+      color: #065f46;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .badge-body {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 10px;
+      align-items: center;
+    }
+
+    #qrcode {
+      width: 120px;
+      height: 120px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .badge-text {
+      font-size: 12px;
+      line-height: 1.4;
+      word-break: break-word;
+      white-space: pre-line;
+    }
+
+    .badge-info {
+      font-size: 11px;
+      color: #6b7280;
+      margin-top: 4px;
+      text-align: center;
+    }
+
+    .error {
+      color: #b91c1c;
+      font-size: 12px;
+      margin-top: 4px;
+      white-space: pre-line;
+    }
+
+    .top-buttons {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .badge-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="top-bar">
+      <h1>Cadastro de Pessoa Física (Web)</h1>
+      <div class="top-buttons">
+        <button class="btn secondary" id="btnExportCsv">Exportar CSV</button>
+      </div>
+    </div>
+
+    <div class="top-area">
+      <!-- Formulário -->
+      <div class="card">
+        <div class="card-title">Dados pessoais</div>
+        <div class="grid">
+          <div>
+            <label>Nome completo *</label>
+            <input id="nome" type="text" placeholder="Nome completo" />
+          </div>
+
+          <div class="row-2">
+            <div>
+              <label>CPF *</label>
+              <input id="cpf" type="text" placeholder="000.000.000-00" />
+            </div>
+            <div>
+              <label>RG</label>
+              <input id="rg" type="text" />
+            </div>
+          </div>
+
+          <div class="row-2">
+            <div>
+              <label>Data de nascimento (dd/mm/aaaa)</label>
+              <input id="data_nascimento" type="text" placeholder="dd/mm/aaaa" />
+            </div>
+            <div>
+              <label>Sexo</label>
+              <select id="sexo">
+                <option value=""></option>
+                <option value="M">M</option>
+                <option value="F">F</option>
+                <option value="O">O</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row-2">
+            <div>
+              <label>Telefone</label>
+              <input id="telefone" type="text" placeholder="(11) 99999-9999" />
+            </div>
+            <div>
+              <label>E-mail</label>
+              <input id="email" type="email" placeholder="email@exemplo.com" />
+            </div>
+          </div>
+
+          <div id="errorBox" class="error" style="display:none;"></div>
+
+          <div class="btn-row">
+            <button class="btn secondary" id="btnNovo">Novo</button>
+            <button class="btn" id="btnSalvar">Salvar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- QR / Crachá -->
+      <div class="card">
+        <div class="card-title">QR / Crachá do último cadastro</div>
+        <div class="badge-container">
+          <div class="badge-preview" id="badgePreview">
+            <div class="badge-header">CRACHÁ DE IDENTIFICAÇÃO</div>
+            <div class="badge-body">
+              <div id="qrcode"></div>
+              <div class="badge-text" id="badgeText">
+                (nenhum cadastro ainda)
+              </div>
+            </div>
+          </div>
+          <div class="badge-info" id="badgeInfo">
+            Nenhum QR gerado ainda.
+          </div>
+          <div class="badge-actions">
+            <button class="btn secondary" id="btnPrintBadge">Imprimir crachá</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabela -->
+    <div class="card">
+      <div class="card-title">Cadastros</div>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:40px;">ID</th>
+              <th>Nome</th>
+              <th>CPF</th>
+              <th>RG</th>
+              <th>Nasc.</th>
+              <th>Telefone</th>
+              <th>E-mail</th>
+              <th style="width:120px;">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ======= Helpers =======
+    function onlyDigits(v) {
+      return (v || "").replace(/\D/g, "");
+    }
+
+    function validateEmail(email) {
+      if (!email) return true;
+      return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email);
+    }
+
+    function validateDate(dateStr) {
+      if (!dateStr) return true;
+      return /^\d{2}\/\d{2}\/\d{4}$/.test(dateStr);
+    }
+
+    function formatCPF(digits) {
+      const d = digits.slice(0, 11);
+      if (d.length <= 3) return d;
+      if (d.length <= 6) return d.slice(0, 3) + "." + d.slice(3);
+      if (d.length <= 9) return d.slice(0, 3) + "." + d.slice(3, 6) + "." + d.slice(6);
+      return (
+        d.slice(0, 3) +
+        "." +
+        d.slice(3, 6) +
+        "." +
+        d.slice(6, 9) +
+        "-" +
+        d.slice(9)
+      );
+    }
+
+    function formatPhone(digits) {
+      const d = digits.slice(0, 11);
+      if (!d) return "";
+      if (d.length <= 2) return "(" + d;
+      if (d.length <= 6) return "(" + d.slice(0, 2) + ") " + d.slice(2);
+      if (d.length <= 10)
+        return "(" + d.slice(0, 2) + ") " + d.slice(2, 6) + "-" + d.slice(6);
+      return (
+        "(" +
+        d.slice(0, 2) +
+        ") " +
+        d.slice(2, 7) +
+        "-" +
+        d.slice(7)
+      );
+    }
+
+    function formatDateMask(value) {
+      const digits = onlyDigits(value).slice(0, 8);
+      if (digits.length <= 2) return digits;
+      if (digits.length <= 4) return digits.slice(0, 2) + "/" + digits.slice(2);
+      return (
+        digits.slice(0, 2) +
+        "/" +
+        digits.slice(2, 4) +
+        "/" +
+        digits.slice(4)
+      );
+    }
+
+    // ======= Estado =======
+    let dataList = [];
+    let editingId = null;
+
+    // ======= DOM =======
+    const $ = (id) => document.getElementById(id);
+
+    const inputNome = $("nome");
+    const inputCPF = $("cpf");
+    const inputRG = $("rg");
+    const inputData = $("data_nascimento");
+    const inputSexo = $("sexo");
+    const inputTel = $("telefone");
+    const inputEmail = $("email");
+
+    const errorBox = $("errorBox");
+    const tableBody = $("tableBody");
+    const badgeText = $("badgeText");
+    const badgeInfo = $("badgeInfo");
+
+    let qrObj = null;
+
+    // ======= Máscaras =======
+    inputCPF.addEventListener("input", () => {
+      const digits = onlyDigits(inputCPF.value);
+      inputCPF.value = formatCPF(digits);
+    });
+
+    inputTel.addEventListener("input", () => {
+      const digits = onlyDigits(inputTel.value);
+      inputTel.value = formatPhone(digits);
+    });
+
+    inputData.addEventListener("input", () => {
+      inputData.value = formatDateMask(inputData.value);
+    });
+
+    // ======= QR Code =======
+    function resetQRCode() {
+      const qrDiv = $("qrcode");
+      qrDiv.innerHTML = "";
+      qrObj = null;
+    }
+
+    function generateQRCodeFor(row) {
+      if (!row) return;
+      const qrDiv = $("qrcode");
+      qrDiv.innerHTML = "";
+
+      // Payload completo no QR, mas só mostra nome/ID visualmente
+      const payload = {
+        id: row.id,
+        nome: row.nome,
+        cpf: onlyDigits(row.cpf),
+        rg: row.rg,
+        data_nascimento: row.data_nascimento,
+        telefone: row.telefone,
+        email: row.email,
+      };
+      const text = JSON.stringify(payload);
+
+      qrObj = new QRCode(qrDiv, {
+        text: text,
+        width: 120,
+        height: 120,
+      });
+
+      // No crachá visual, mostramos apenas ID + Nome
+      badgeText.textContent =
+        "ID: " + row.id + "\n" +
+        "Nome: " + row.nome;
+
+      badgeInfo.textContent = "QR gerado com dados completos (ID " + row.id + ").";
+    }
+
+    // ======= CRUD =======
+    function nextId() {
+      if (dataList.length === 0) return 1;
+      return Math.max(...dataList.map(d => d.id)) + 1;
+    }
+
+    function clearForm() {
+      editingId = null;
+      inputNome.value = "";
+      inputCPF.value = "";
+      inputRG.value = "";
+      inputData.value = "";
+      inputSexo.value = "";
+      inputTel.value = "";
+      inputEmail.value = "";
+      errorBox.style.display = "none";
+      errorBox.textContent = "";
+    }
+
+    function loadIntoForm(id) {
+      const row = dataList.find(d => d.id === id);
+      if (!row) return;
+      editingId = id;
+      inputNome.value = row.nome;
+      inputCPF.value = row.cpf;
+      inputRG.value = row.rg;
+      inputData.value = row.data_nascimento;
+      inputSexo.value = row.sexo;
+      inputTel.value = row.telefone;
+      inputEmail.value = row.email;
+      errorBox.style.display = "none";
+      errorBox.textContent = "";
+      generateQRCodeFor(row);
+    }
+
+    function renderTable() {
+      tableBody.innerHTML = "";
+      dataList.forEach(row => {
+        const tr = document.createElement("tr");
+
+        const tdId = document.createElement("td");
+        tdId.textContent = row.id;
+
+        const tdNome = document.createElement("td");
+        tdNome.textContent = row.nome;
+
+        const tdCPF = document.createElement("td");
+        tdCPF.textContent = row.cpf;
+
+        const tdRG = document.createElement("td");
+        tdRG.textContent = row.rg;
+
+        const tdNasc = document.createElement("td");
+        tdNasc.textContent = row.data_nascimento;
+
+        const tdTel = document.createElement("td");
+        tdTel.textContent = row.telefone;
+
+        const tdEmail = document.createElement("td");
+        tdEmail.textContent = row.email;
+
+        const tdAcoes = document.createElement("td");
+        const btnEdit = document.createElement("button");
+        btnEdit.textContent = "Editar";
+        btnEdit.className = "btn secondary";
+        btnEdit.style.padding = "4px 8px";
+        btnEdit.style.fontSize = "11px";
+        btnEdit.addEventListener("click", () => loadIntoForm(row.id));
+
+        const btnDel = document.createElement("button");
+        btnDel.textContent = "Excluir";
+        btnDel.className = "btn danger";
+        btnDel.style.padding = "4px 8px";
+        btnDel.style.fontSize = "11px";
+        btnDel.style.marginLeft = "4px";
+        btnDel.addEventListener("click", () => deleteRow(row.id));
+
+        tdAcoes.appendChild(btnEdit);
+        tdAcoes.appendChild(btnDel);
+
+        tr.appendChild(tdId);
+        tr.appendChild(tdNome);
+        tr.appendChild(tdCPF);
+        tr.appendChild(tdRG);
+        tr.appendChild(tdNasc);
+        tr.appendChild(tdTel);
+        tr.appendChild(tdEmail);
+        tr.appendChild(tdAcoes);
+
+        tableBody.appendChild(tr);
+      });
+    }
+
+    function deleteRow(id) {
+      if (!confirm("Deseja realmente excluir este cadastro?")) return;
+      dataList = dataList.filter(d => d.id !== id);
+      renderTable();
+      if (editingId === id) {
+        clearForm();
+      }
+    }
+
+    function showErrors(errors) {
+      if (!errors.length) {
+        errorBox.style.display = "none";
+        errorBox.textContent = "";
+        return;
+      }
+      errorBox.style.display = "block";
+      errorBox.textContent = errors.join("\n");
+    }
+
+    function handleSave() {
+      const data = {
+        nome: inputNome.value.trim(),
+        cpf: inputCPF.value.trim(),
+        rg: inputRG.value.trim(),
+        data_nascimento: inputData.value.trim(),
+        sexo: inputSexo.value.trim(),
+        telefone: inputTel.value.trim(),
+        email: inputEmail.value.trim(),
+      };
+
+      const errors = [];
+
+      if (!data.nome) {
+        errors.push("Nome é obrigatório.");
+      }
+
+      const cpfDigits = onlyDigits(data.cpf);
+      if (cpfDigits.length !== 11) {
+        errors.push("CPF deve ter 11 dígitos.");
+      }
+
+      if (!validateDate(data.data_nascimento)) {
+        errors.push("Data de nascimento inválida. Use dd/mm/aaaa.");
+      }
+
+      if (!validateEmail(data.email)) {
+        errors.push("E-mail inválido.");
+      }
+
+      if (errors.length) {
+        showErrors(errors);
+        return;
+      }
+
+      let row = null;
+      if (editingId === null) {
+        const id = nextId();
+        row = { id, ...data };
+        dataList.push(row);
+      } else {
+        dataList = dataList.map(d => {
+          if (d.id === editingId) {
+            row = { id: editingId, ...data };
+            return row;
+          }
+          return d;
+        });
+      }
+
+      renderTable();
+      generateQRCodeFor(row);
+      showErrors([]);
+
+      alert("Cadastro salvo com sucesso!");
+    }
+
+    // ======= Exportar CSV =======
+    function exportCsv() {
+      if (dataList.length === 0) {
+        alert("Não há registros para exportar.");
+        return;
+      }
+
+      const headers = [
+        "id",
+        "nome",
+        "cpf",
+        "rg",
+        "data_nascimento",
+        "sexo",
+        "telefone",
+        "email"
+      ];
+
+      const escapeField = (value) => {
+        const s = String(value ?? "");
+        if (/[",\n;]/.test(s)) {
+          return '"' + s.replace(/"/g, '""') + '"';
+        }
+        return s;
+      };
+
+      const lines = [];
+      lines.push(headers.join(";"));
+
+      dataList.forEach(row => {
+        const values = headers.map(h => escapeField(row[h]));
+        lines.push(values.join(";"));
+      });
+
+      const csvContent = lines.join("\r\n");
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "pessoas.csv";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    // ======= Imprimir crachá =======
+    function printBadge() {
+      const badge = document.getElementById("badgePreview");
+      if (!badge) return;
+
+      const printContents = badge.innerHTML;
+      const win = window.open("", "_blank", "width=800,height=600");
+
+      win.document.write("<html><head><title>Cracha</title>");
+      win.document.write(`
+        <style>
+          body {
+            margin: 0;
+            font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+            background: #ffffff;
+          }
+          .badge-preview {
+            width: 600px;
+            margin: 20px auto;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 16px;
+          }
+          .badge-header {
+            background: #a7f3d0;
+            color: #065f46;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 10px;
+          }
+          .badge-body {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 12px;
+            align-items: center;
+          }
+        </style>
+      `);
+      win.document.write("</head><body>");
+      win.document.write('<div class="badge-preview">');
+      win.document.write(printContents);
+      win.document.write("</div>");
+      win.document.write("</body></html>");
+
+      win.document.close();
+      win.focus();
+      win.print();
+      win.close();
+    }
+
+    // ======= Eventos principais =======
+    $("btnNovo").addEventListener("click", (e) => {
+      e.preventDefault();
+      clearForm();
+    });
+
+    $("btnSalvar").addEventListener("click", (e) => {
+      e.preventDefault();
+      handleSave();
+    });
+
+    $("btnExportCsv").addEventListener("click", (e) => {
+      e.preventDefault();
+      exportCsv();
+    });
+
+    $("btnPrintBadge").addEventListener("click", (e) => {
+      e.preventDefault();
+      printBadge();
+    });
+
+    // Inicial
+    renderTable();
+    resetQRCode();
+  </script>
+</body>
+</html>
